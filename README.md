@@ -18,5 +18,5 @@ HOW TO RUN PROGRAM:
 
 
 Other Important Info: 
-To view the current players database, do psql -U student -d photon -h 127.0.0.1 and password student 
-Next do SELECT * FROM players to view the players added
+To view the current players database, do psql -U student -d photon -h 127.0.0.1 and password student. 
+Next do SELECT * FROM players;  to view the players added. 
