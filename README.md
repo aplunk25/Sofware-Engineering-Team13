@@ -15,3 +15,8 @@ HOW TO RUN PROGRAM:
 5. Open two terminal windows, in one, with venv active, run python3 UDP_Server.py
 6. In the other with venv active as well, run python3 python-pg.py
 7. Follow the input
+
+
+Other Important Info: 
+To view the current players database, do psql -U student -d photon -h 127.0.0.1 and password student 
+Next do SELECT * FROM players to view the players added
