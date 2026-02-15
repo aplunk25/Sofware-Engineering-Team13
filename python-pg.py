@@ -1,13 +1,22 @@
 import psycopg2
 from psycopg2 import sql
+from UDP_Client import get_equipment_code
+
+# Receive equipment code (integer only)
+while True:
+    try:
+        equipment_code = int(input("Enter equipment ID: "))
+        break  # Exits if the code is an integer
+    except ValueError:
+        print("Code needs to be an integer. Try again.\n")
 
 # Define connection parameters
 connection_params = {
     'dbname': 'photon',
     'user': 'student',
-    #'password': 'student',
-    #'host': 'localhost',
-    #'port': '5432'
+    # 'password': 'student',
+    # 'host': 'localhost',
+    # 'port': '5432'
 }
 
 try:
@@ -23,14 +32,14 @@ try:
     print(f"Connected to - {version}")
 
     # Example: creating a table
-    #cursor.execute('''
+    # cursor.execute('''
     #    CREATE TABLE IF NOT EXISTS employees (
     #        id SERIAL PRIMARY KEY,
     #        name VARCHAR(100),
     #        department VARCHAR(50),
     #        salary DECIMAL
     #    );
-    #''')
+    # ''')
 
     # Insert sample data
     cursor.execute('''
@@ -40,6 +49,12 @@ try:
 
     # Commit the changes
     conn.commit()
+
+    # Call function to broadcast equipment code
+    try:
+        get_equipment_code(equipment_code)
+    except Exception as net_err:
+        print("Error. Could not send equipment code: ", net_err)
 
     # Fetch and display data from the table
     cursor.execute("SELECT * FROM players;")
