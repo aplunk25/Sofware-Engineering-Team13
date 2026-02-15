@@ -33,8 +33,8 @@ class SplashScreen:
     # destroy splash screen, on close is when we add stuff after, so when splash screen closes it moves on. 
     def _finish(self):
         # if you want to destroy window as well, uncomment line below
-        #self.root.destroy()
-        self._label.config(image="")
+        self.root.destroy()
+        # self._label.config(image="")
         if self.on_close:
             self.on_close()
 
