@@ -50,7 +50,7 @@ def show_player(cursor, pid):
         print("Player not found.")
         return
 
-    print("\nPLAYER INFO (screenshot this):")
+    print("\nPLAYER INFO:")
     print("-----------------------------")
     print(f"Equipment ID: {row[0]}")
     print(f"Codename:     {row[1]}")
@@ -113,8 +113,6 @@ def run_app():
             cursor.execute("""
                 INSERT INTO players (id, codename)
                 VALUES (%s, %s)
-                ON CONFLICT (id) DO UPDATE
-                SET codename = EXCLUDED.codename;
             """, (pid, codename))
             conn.commit()
 
