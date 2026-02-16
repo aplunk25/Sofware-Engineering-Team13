@@ -9,7 +9,7 @@ from player_entry import entry_terminal
 connection_params = {
     'dbname': 'photon',
     'user': 'student',
-    #'password': 'student',
+    'password': 'student',
     #'host': 'localhost',
     #'port': '5432'
 }
