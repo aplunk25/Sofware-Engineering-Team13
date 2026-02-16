@@ -88,8 +88,6 @@ class EntryTerminal:
         q = sql.SQL("""
             INSERT INTO {t} ({idc}, {cc})
             VALUES (%s, %s)
-            ON CONFLICT ({idc}) DO UPDATE
-            SET {cc} = EXCLUDED.{cc};
         """).format(
             t=sql.Identifier(self.table_name),
             idc=sql.Identifier(self.id_column),
