@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Entry Terminal - Player Entry System (Tkinter GUI)
-Two teams with ID Number and Codename columns
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
