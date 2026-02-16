@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
+"""
+Entry Terminal - Player Entry System (Tkinter GUI)
+Two teams with ID Number and Codename columns
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
+import psycopg2
+from psycopg2 import sql
+
 
 class Team:
     def __init__(self, name: str, color: str, max_players: int = 20):
@@ -22,18 +30,24 @@ class Team:
         return sum(1 for p in self.players if p[0])
 
 class EntryTerminal:
-    def __init__(self, root):
+    def __init__(self, root, pg_config):
         self.root = root
         self.root.title("Entry Terminal")
         self.root.geometry("1200x800")
         self.root.configure(bg="#1a1a2e")
+
         
-        self.pg_config = {
-            "host": "localhost",
-            "port": 5432,
-            "dbname": "photon",
+        
+        self.pg_config = dict(pg_config)   # copy from python-pg.py
+        # Fill in defaults if python-pg.py omits them
+        self.pg_config.setdefault('host', 'localhost')
+        self.pg_config.setdefault('port', 5432)
+        self.table_name = "players"
+        self.id_column = "id"
+        self.codename_column = "codename"
+        self._ensure_table()
             
-        }
+        
         # Teams
         self.teams = [
             Team("RED TEAM", "#8B0000", 20),
@@ -53,6 +67,88 @@ class EntryTerminal:
         
         self.create_ui()
         
+
+    def _ensure_table(self):
+        """Create the players table if it doesn't exist."""
+        try:
+            with psycopg2.connect(**self.pg_config) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS players (
+                            id INTEGER PRIMARY KEY,
+                            codename TEXT NOT NULL
+                        );
+                    """)
+                conn.commit()
+        except Exception as e:
+            messagebox.showerror("DB Error", str(e))
+
+    def _db_upsert(self, pid: int, codename: str):
+        """Insert or update a player row."""
+        q = sql.SQL("""
+            INSERT INTO {t} ({idc}, {cc})
+            VALUES (%s, %s)
+            ON CONFLICT ({idc}) DO UPDATE
+            SET {cc} = EXCLUDED.{cc};
+        """).format(
+            t=sql.Identifier(self.table_name),
+            idc=sql.Identifier(self.id_column),
+            cc=sql.Identifier(self.codename_column),
+        )
+        with psycopg2.connect(**self.pg_config) as conn:
+            with conn.cursor() as cur:
+                cur.execute(q, (pid, codename))
+            conn.commit()
+
+    def _db_delete(self, pid: int):
+        """Delete a player row by id."""
+        q = sql.SQL("DELETE FROM {t} WHERE {idc} = %s;").format(
+            t=sql.Identifier(self.table_name),
+            idc=sql.Identifier(self.id_column),
+        )
+        with psycopg2.connect(**self.pg_config) as conn:
+            with conn.cursor() as cur:
+                cur.execute(q, (pid,))
+            conn.commit()
+
+    def save_row(self, team_idx: int, slot_idx: int):
+        """Save (upsert) a single UI row to Postgres after typing."""
+        try:
+            id_entry, codename_entry, _, checkbox_var = self.entry_widgets[team_idx][slot_idx]
+        except Exception:
+            return
+
+        id_str = id_entry.get().strip()
+        code = codename_entry.get().strip()
+
+        # Nothing to save
+        if not id_str and not code:
+            checkbox_var.set(False)
+            return
+
+        if not id_str.isdigit():
+            messagebox.showerror("Input Error", "Equipment ID must be numeric.")
+            return
+
+        pid = int(id_str)
+
+        # If codename empty, try to look it up (optional convenience)
+        if not code:
+            code = self.lookup_codename(id_str).strip()
+            if code:
+                codename_entry.delete(0, tk.END)
+                codename_entry.insert(0, code)
+
+        if not code:
+            # still empty -> don't write junk row
+            return
+
+        try:
+            self._db_upsert(pid, code)
+            checkbox_var.set(True)
+        except Exception as e:
+            messagebox.showerror("DB Error", str(e))
+
     def create_ui(self):
         # Title
         title_frame = tk.Frame(self.root, bg="#1a1a2e", height=80)
@@ -241,6 +337,10 @@ class EntryTerminal:
             
         id_entry.bind("<KeyRelease>", update_checkbox)
         codename_entry.bind("<KeyRelease>", update_checkbox)
+        # Save to DB when user presses Enter or leaves the field
+        id_entry.bind('<Return>', lambda e: self.save_row(team_idx, slot_idx))
+        codename_entry.bind('<Return>', lambda e: self.save_row(team_idx, slot_idx))
+        codename_entry.bind('<FocusOut>', lambda e: self.save_row(team_idx, slot_idx))
         
         # Store references
         self.entry_widgets[team_idx].append((id_entry, codename_entry, row_frame, checkbox_var))
@@ -248,10 +348,21 @@ class EntryTerminal:
     def delete_player(self, team_idx, slot_idx):
         if slot_idx < len(self.entry_widgets[team_idx]):
             id_entry, codename_entry, _, checkbox_var = self.entry_widgets[team_idx][slot_idx]
+            id_str = id_entry.get().strip()
+
+            # Delete from DB if an ID is present
+            if id_str.isdigit():
+                try:
+                    self._db_delete(int(id_str))
+                except Exception as e:
+                    messagebox.showerror('DB Error', str(e))
+                    return
+
+            # Clear UI
             id_entry.delete(0, tk.END)
             codename_entry.delete(0, tk.END)
             checkbox_var.set(False)
-            
+
     def create_footer(self):
         footer_frame = tk.Frame(self.root, bg="#1a1a2e", height=120)
         footer_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=10)
@@ -390,10 +501,10 @@ class EntryTerminal:
             messagebox.showerror("DB Error", str(e))
             return ""
 
-def main():
+def entry_terminal(pg_config):
     root = tk.Tk()
-    app = EntryTerminal(root)
+    app = EntryTerminal(root, pg_config)
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    entry_terminal({"dbname": "photon", "user": "student", "host": "localhost", "port": 5432})
