@@ -16,15 +16,14 @@ def select_network():
         choice = input("Select option (1 or 2): ")
 
         # Switch statement (match in python)
-        match choice:
-            case '1':
-                return ("127.0.0.1", 7501)
-            case '2':
-                address = input("Enter you network address: ")
-                return (address, 7501)
-            case _:
-                print("Invalid choice. Try again.\n")
-                print("----------------------------\n")
+        if choice == '1':
+            return ("127.0.0.1", 7501)
+        elif choice == '0':
+            address = input("Enter you network address: ")
+            return (address, 7501)
+        else:
+            print("Invalid choice. Try again.\n")
+            print("----------------------------\n")
 
 
 # Function to get equipment code and handle any future logic.
@@ -72,3 +71,4 @@ def send_packet(data):
     print(msg)
 
     print("Server address port:  ", serverAddressPort)
+
