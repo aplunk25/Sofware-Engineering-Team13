@@ -8,8 +8,8 @@ from player_entry import entry_terminal
 # Define connection parameters
 connection_params = {
     'dbname': 'photon',
-    'user': 'student',
-    'password': 'student',
+    #'user': 'student',
+    #'password': 'student',
     #'host': 'localhost',
     #'port': '5432'
 }
