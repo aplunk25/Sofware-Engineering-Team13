@@ -18,7 +18,7 @@ def select_network():
         # Switch statement (match in python)
         if choice == '1':
             return ("127.0.0.1", 7501)
-        elif choice == '0':
+        elif choice == '2':
             address = input("Enter you network address: ")
             return (address, 7501)
         else:
@@ -71,4 +71,5 @@ def send_packet(data):
     print(msg)
 
     print("Server address port:  ", serverAddressPort)
+
 
